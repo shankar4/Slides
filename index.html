@@ -1,1 +1,188 @@
-default
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PCA Preprocessing and KNN Clustering</title>
+  <meta charset="utf-8">
+  <meta name="description" content="PCA Preprocessing and KNN Clustering">
+  <meta name="author" content="Ravi Shankar">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>PCA Preprocessing and KNN Clustering</h1>
+    <h2>Effect of Discretization and Tolerance</h2>
+    <p>Ravi Shankar<br/>Student, Data Products Course, Coursera and JHU</p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Background</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li>This is a demonstration of the use of PCA (principal component analytis) and KNN (k near neighbor) clustering</li>
+<li>For it to be responsive (low latency) on Shiny, it had to use a small enough data set and not invoke advanced packages such as caret.</li>
+<li>Chose mtcars data and used low level packages with small footprints (MASS and class).</li>
+<li>Since the mpg data was continuous, user adjustable discretization levels of 5, 10, 15, and 20 were provided. </li>
+<li>The tolerance level of PCA was allowed to vary from 0 to 1, which allowed all to none of the principle components to be chosen.</li>
+<li>The intent was to see which combination of discreization and PCA tolerance yielded the best accuracy.</li>
+<li>Accuracy varied from 0 to 50% for various combinations</li>
+<li>Further refinements may yield better results; but the intent was to prove the feasibility of a machine learning algorithm on Shiny using low level packages. </li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="class" id="id" style="background:;">
+  <hgroup>
+    <h3>Step 1: Discretization of mpg data of mtcars data set at 5, 10, and 20 levels</h3>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">data(mtcars); discretization.levels &lt;- 5; cars &lt;- mtcars 
+cars$mpg &lt;- cut(cars$mpg,discretization.levels); discretization.levels; head(cars$mpg)
+</code></pre>
+
+<pre><code>## [1] 5
+</code></pre>
+
+<pre><code>## [1] (19.8,24.5] (19.8,24.5] (19.8,24.5] (19.8,24.5] (15.1,19.8] (15.1,19.8]
+## Levels: (10.4,15.1] (15.1,19.8] (19.8,24.5] (24.5,29.2] (29.2,33.9]
+</code></pre>
+
+<pre><code>## [1] (19.8,22.1] (19.8,22.1] (22.1,24.5] (19.8,22.1] (17.5,19.8] (17.5,19.8]
+## 10 Levels: (10.4,12.8] (12.8,15.1] (15.1,17.5] (17.5,19.8] ... (31.6,33.9]
+</code></pre>
+
+<pre><code>## [1] (21,22.1]   (21,22.1]   (22.1,23.3] (21,22.1]   (18.6,19.8] (17.5,18.6]
+## 20 Levels: (10.4,11.6] (11.6,12.8] (12.8,13.9] (13.9,15.1] ... (32.7,33.9]
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h3>Step 2: Use of PCA for preprocessing the training and validation sets</h3>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">data(mtcars); discretization.levels &lt;- 10; cars &lt;- mtcars 
+cars$mpg &lt;- cut(cars$mpg,discretization.levels)
+set.seed(32343)
+training.rows &lt;- tapply(1:nrow(cars), cars$mpg , sample , size =4, replace=TRUE)
+InTrain &lt;- unlist( training.rows )
+train.set &lt;- cars[InTrain,]; valid.set &lt;- cars[-InTrain,]
+</code></pre>
+
+<p>Dimensions of train.set and  valid.set before transformation with PCA are, respectively, [40, 11] and  [10, 11].</p>
+
+<pre><code class="r">require(MASS); library(MASS)
+PCA.Tolerance &lt;- 0.05
+preProc &lt;- prcomp(train.set[,-1], scale=TRUE, center=TRUE, tol = PCA.Tolerance)
+trainPC &lt;- predict(preProc,train.set[,-1]); validPC &lt;- predict(preProc,valid.set[,-1])
+</code></pre>
+
+<p>Dimensions of trainPC and the validPC after transformation with PCA are, respectively, [40, 9] and [10, 9].</p>
+
+<pre><code></code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h3>Use of KNN for predicting the mpg of the validation set</h3>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">require(class); library(class)
+trainPC.df &lt;- as.data.frame(trainPC)
+validPC.df &lt;- as.data.frame(validPC)
+pred &lt;- knn(trainPC.df, validPC.df, cl= train.set$mpg, k = 4,  prob = FALSE, use.all = TRUE)
+obs &lt;- valid.set$mpg
+count &lt;- sum(pred==obs)
+accuracy &lt;- round(100 * count/length(pred))
+</code></pre>
+
+<p>Accuracy of the prediction for 10 discretization levels and PCA tolerance of 0.05 is 20%.</p>
+
+<p>Accuracy of the prediction for 10 discretization levels and PCA tolerance of 0.75 is 30%.</p>
+
+<p>Summary: This has been a tutorial to show-case the use of PCA and KNN. I had to find and use low level R packages to ensure that it will run fast and with a small memory footprint on the web (as a Shiny App) . For varous combinations of discretization levels and PCA tolerance, accuracies of 0 to 50% were achieved. For a good real-world example with the caret package, see <a href="https://github.com/shankar4/Machine-Learning">https://github.com/shankar4/Machine-Learning</a>. </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Background'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Step 1: Discretization of mpg data of mtcars data set at 5, 10, and 20 levels'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Step 2: Use of PCA for preprocessing the training and validation sets'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Use of KNN for predicting the mpg of the validation set'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
